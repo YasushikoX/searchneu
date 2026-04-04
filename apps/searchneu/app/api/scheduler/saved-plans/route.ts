@@ -1,13 +1,13 @@
 import { verifyUser } from "@/lib/dal/audits";
+import { getTerm } from "@/lib/dal/terms";
 import {
   db,
-  savedPlansT,
   savedPlanCoursesT,
   savedPlanSectionsT,
+  savedPlansT,
 } from "@/lib/db";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NextRequest } from "next/server";
-import { getTerm } from "@/lib/dal/terms";
 
 interface SavePlanSection {
   sectionId: number;

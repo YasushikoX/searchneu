@@ -1,13 +1,14 @@
 import { SchedulerWrapper } from "@/components/scheduler/generator/SchedulerWrapper";
-import { getTerms } from "@/lib/dal/terms";
+import { auth } from "@/lib/auth/auth";
 import { getCampuses } from "@/lib/dal/campuses";
 import { getNupaths } from "@/lib/dal/nupaths";
+import { getTerms } from "@/lib/dal/terms";
 
 import { db, nupathsT, savedPlansT } from "@/lib/db";
-import { auth } from "@/lib/auth/auth";
+
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
-import { eq, and } from "drizzle-orm";
+import { notFound } from "next/navigation";
 
 export default async function Page({
   searchParams,
@@ -19,34 +20,29 @@ export default async function Page({
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-
-  if (!session) {
-    redirect("/");
-  }
-
   const params = await searchParams;
   const planId = params.planId ? parseInt(params.planId) : null;
 
-  if (!planId || isNaN(planId)) {
-    return <div>Invalid or missing plan ID</div>;
-  }
+  const isValidPlanId = planId && !isNaN(planId);
 
-  let plan;
+  let plan = null;
 
-  try {
-    plan = await db.query.savedPlansT.findFirst({
-      where: and(
-        eq(savedPlansT.id, planId),
-        eq(savedPlansT.userId, session.user.id),
-      ),
-    });
-  } catch (error) {
-    console.error("Error loading plan:", error);
-    return notFound();
-  }
+  if (session?.user?.id && isValidPlanId) {
+    try {
+      plan = await db.query.savedPlansT.findFirst({
+        where: and(
+          eq(savedPlansT.id, planId),
+          eq(savedPlansT.userId, session.user.id),
+        ),
+      });
+    } catch (error) {
+      console.error("Error loading plan:", error);
+      return notFound();
+    }
 
-  if (!plan) {
-    return notFound();
+    if (!plan) {
+      return notFound();
+    }
   }
 
   // Fetch available NUPath options
@@ -71,6 +67,7 @@ export default async function Page({
         terms={terms}
         campuses={campuses}
         nupaths={nupaths}
+        isLoggedIn={session?.user?.id ? true : false}
       />
     </div>
   );

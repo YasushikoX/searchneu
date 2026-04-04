@@ -63,10 +63,12 @@ export function DashboardClient({
   termsPromise,
   campusesPromise,
   nupathsPromise,
+  isLoggedIn,
 }: {
   termsPromise: Promise<GroupedTerms>;
   campusesPromise: Promise<Campus[]>;
   nupathsPromise: Promise<Nupath[]>;
+  isLoggedIn: boolean;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -84,14 +86,14 @@ export function DashboardClient({
     isLoading,
     mutate,
   } = useSWR<SavedPlan[]>(
-    // selectedTerm will always be defined
-    `/api/scheduler/saved-plans/term/${selectedTerm.term}${selectedTerm.part}`,
+    isLoggedIn
+      ? `/api/scheduler/saved-plans/term/${selectedTerm.term}${selectedTerm.part}`
+      : null,
     (u: string) => fetch(u).then((r) => r.json()),
     { fallbackData: [], suspense: true },
   );
 
-  // this case should never happen as data is always defined (despite the type)
-  if (!plans) throw Error("fallback data not correctly set");
+  const existingPlans = plans ?? [];
 
   const handleDeletePlan = async (planId: number) => {
     if (!confirm("Are you sure you want to delete this plan?")) {
@@ -109,7 +111,7 @@ export function DashboardClient({
       {
         revalidate: false,
         rollbackOnError: true,
-        optimisticData: plans.filter((p) => p.id !== planId),
+        optimisticData: existingPlans.filter((p) => p.id !== planId),
       },
     );
   };
@@ -154,34 +156,46 @@ export function DashboardClient({
         className={cn(
           `bg-neu1 flex h-full min-h-0 w-full flex-col place-content-center space-y-4 overflow-y-scroll rounded-lg border border-t-0 px-4 py-4 md:border-t-1`,
           {
-            "place-content-start": plans?.length > 0,
+            "place-content-start": existingPlans?.length > 0,
           },
         )}
       >
-        {isLoading && (
-          <div className="flex flex-col items-center gap-1 text-center">
-            <p className="text-xl font-semibold">Loading plans...</p>
-          </div>
-        )}
-        {!isLoading && plans.length === 0 && (
+        {!isLoggedIn ? (
           <div className="flex flex-col items-center gap-1 text-center">
             <Searchskie className="w-72 pb-8" />
-            <h1 className="text-xl font-semibold">No plans found</h1>
-            <p className="">Generate a new schedule first</p>
+            <p>
+              Your plan is temporary and won&apos;t be saved. Sign in to keep
+              and access it later.
+            </p>
           </div>
-        )}
-        {!isLoading && plans.length > 0 && (
-          <div className="space-y-4 py-4">
-            {plans.map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                onDelete={handleDeletePlan}
-                campuses={campuses}
-                nupaths={nupaths}
-              />
-            ))}
-          </div>
+        ) : (
+          <>
+            {isLoading && (
+              <div className="flex flex-col items-center gap-1 text-center">
+                <p className="text-xl font-semibold">Loading plans...</p>
+              </div>
+            )}
+            {!isLoading && existingPlans.length === 0 && (
+              <div className="flex flex-col items-center gap-1 text-center">
+                <Searchskie className="w-72 pb-8" />
+                <h1 className="text-xl font-semibold">No plans found</h1>
+                <p className="">Generate a new schedule first</p>
+              </div>
+            )}
+            {!isLoading && existingPlans.length > 0 && (
+              <div className="space-y-4 py-4">
+                {existingPlans.map((plan) => (
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    onDelete={handleDeletePlan}
+                    campuses={campuses}
+                    nupaths={nupaths}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

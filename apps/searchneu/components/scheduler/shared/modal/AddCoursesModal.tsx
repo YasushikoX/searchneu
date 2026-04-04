@@ -2,8 +2,8 @@
 
 import {
   Course,
-  GroupedTerms,
   CourseSearchResult,
+  GroupedTerms,
   Term,
 } from "@/lib/catalog/types";
 import {

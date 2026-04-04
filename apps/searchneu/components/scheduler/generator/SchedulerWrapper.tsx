@@ -1,30 +1,31 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { Campus, GroupedTerms, Nupath } from "@/lib/catalog/types";
+import { getCourseColorMap } from "@/lib/scheduler/courseColors";
 import {
   filterSchedules,
   type ScheduleFilters,
   type SectionWithCourse,
 } from "@/lib/scheduler/filters";
-import { getCourseColorMap } from "@/lib/scheduler/courseColors";
 import { getScheduleKey } from "@/lib/scheduler/scheduleKey";
-import { SchedulerView } from "./calendar/SchedulerView";
-import { ScheduleSidebar } from "./right-sidebar/ScheduleSidebar";
-import { FilterPanel } from "./left-sidebar/FilterPanel";
-import { GroupedTerms, Campus, Nupath } from "@/lib/catalog/types";
 import {
-  PlanData,
   PlanCourse,
+  PlanData,
   PlanSection,
   PlanUpdateData,
 } from "@/lib/scheduler/types";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { SchedulerView } from "./calendar/SchedulerView";
+import { FilterPanel } from "./left-sidebar/FilterPanel";
+import { ScheduleSidebar } from "./right-sidebar/ScheduleSidebar";
 
 interface SchedulerWrapperProps {
   nupathOptions: { label: string; value: string }[];
   terms: GroupedTerms;
   campuses: Campus[];
   nupaths: Nupath[];
+  isLoggedIn: boolean;
 }
 
 export function SchedulerWrapper({
@@ -32,6 +33,7 @@ export function SchedulerWrapper({
   terms,
   campuses,
   nupaths,
+  isLoggedIn,
 }: SchedulerWrapperProps) {
   const router = useRouter();
   const [selectedScheduleKey, setSelectedScheduleKey] = useState<string | null>(
